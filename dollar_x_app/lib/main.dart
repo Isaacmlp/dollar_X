@@ -1,4 +1,4 @@
-import 'package:dollar_x_app/presentation/screens/home_page.dart';
+import 'package:dollar_x_app/presentation/screens/home.dart';
 import 'package:flutter/material.dart';
 
 Future<void> main() async {
@@ -12,10 +12,10 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        colorSchemeSeed: AppColors.primaryColor,
+        colorSchemeSeed: Colors.greenAccent,
         brightness: Brightness.dark,
       ),
-      home: const HomePage(),
+      home: const HomeScreen(),
     );
   }
 }
