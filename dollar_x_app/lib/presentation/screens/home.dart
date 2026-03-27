@@ -1,9 +1,7 @@
 import 'package:dollar_x_app/Controller/MainPageController.dart';
-import 'package:dollar_x_app/Utils/scrapperUtil.dart';
+import 'package:dollar_x_app/Widgets/currency_textfield.dart';
+import 'package:dollar_x_app/presentation/Constants/colors.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
-double dollar = 0.0;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,64 +21,13 @@ class _HomeScreenState extends State<HomeScreen> {
       dollarController: TextEditingController(text: "1"),
       bsController: TextEditingController(),
     );
-    _tasaFuture = _mostrarTasa();
+    _tasaFuture = _controller.fetchTasa();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
-  }
-
-  Future<String?> _mostrarTasa() async {
-    final precio = await ScrapperUtil.getDolarBcv();
-    return precio?.toStringAsFixed(2);
-  }
-
-  Future<void> _copyToClipboardBs(BuildContext context) async {
-    final textToCopy = _controller.bsController.text;
-    if (textToCopy.isEmpty) return;
-
-    try {
-      await Clipboard.setData(ClipboardData(text: textToCopy));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Copiado al portapapeles"),
-          backgroundColor: Colors.greenAccent,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error al copiar: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _copyToClipboardUSD(BuildContext context) async {
-    final textToCopy = _controller.dollarController.text;
-    if (textToCopy.isEmpty) return;
-
-    try {
-      await Clipboard.setData(ClipboardData(text: textToCopy));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Copiado al portapapeles"),
-          backgroundColor: Colors.greenAccent,
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error al copiar: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   @override
@@ -95,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
             } else if (snapshot.hasError) {
               return const Text("Error al cargar");
             } else {
-              dollar = double.parse(snapshot.data ?? '0.0');
               return Text(
                 "Dollar X  Tasa: ${snapshot.data ?? 'N/A'}",
                 style: const TextStyle(color: Colors.white),
@@ -103,68 +49,68 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           },
         ),
-        backgroundColor: Colors.greenAccent,
+        backgroundColor: AppColors.primary,
       ),
-      body: Center(
-        child: Column(
-          children: [
-            Builder(
-              builder: (context) => TextField(
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: 'Dolar',
-                  errorText: _controller.dollarError,
-                  suffixIcon: IconButton(
-                    onPressed: () => _copyToClipboardUSD(context),
-                    icon: const Icon(Icons.copy),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 30),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.neutral,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                children: [
+                  CurrencyTextField(
+                    controller: _controller,
+                    label: 'Dolar',
+                    getErrorText: () => _controller.dollarError,
+                    textController: _controller.dollarController,
+                    onChanged: (value) {
+                      setState(() {
+                        _controller.validatorsUSD(value);
+                        value = _controller.dollarController.text;
+                        if (value.isNotEmpty) {
+                          final parsed = double.tryParse(value);
+                          if (parsed != null) {
+                            _controller.setBsValue(parsed * _controller.dollar);
+                          }
+                        }
+                      });
+                    },
+                    onCopy: (ctx) => _controller.copyToClipboardUSD(ctx),
                   ),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                controller: _controller.dollarController,
-                onChanged: (value) {
-                  setState(() {
-                    value = _controller.dollarController.text;
-                    if (value.isNotEmpty) {
-                      final newValue = dollar * double.parse(value);
-                      _controller.bsController.text =
-                          newValue.toStringAsFixed(2);
-                    }
-                  });
-                },
+                  const SizedBox(height: 16),
+                  CurrencyTextField(
+                    controller: _controller,
+                    label: 'Bs',
+                    getErrorText: () => _controller.bsError,
+                    textController: _controller.bsController,
+                    onChanged: (value) {
+                      setState(() {
+                        _controller.validatorsBS(value);
+                        value = _controller.bsController.text;
+                        if (value.isNotEmpty) {
+                          final parsed = double.tryParse(value);
+                          if (parsed != null) {
+                            _controller.setDollarValue(
+                                parsed / _controller.dollar);
+                          }
+                        }
+                      });
+                    },
+                    onCopy: (ctx) => _controller.copyToClipboardBs(ctx),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            Builder(
-              builder: (context) => TextField(
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: 'Bs',
-                  errorText: _controller.bsError,
-                  suffixIcon: IconButton(
-                    onPressed: () => _copyToClipboardBs(context),
-                    icon: const Icon(Icons.copy),
-                  ),
-                ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                controller: _controller.bsController,
-                onChanged: (value) {
-                  setState(() {
-                    value = _controller.bsController.text;
-                    if (value.isNotEmpty) {
-                      final newValue = double.parse(value) / dollar;
-                      _controller.dollarController.text =
-                          newValue.toStringAsFixed(2);
-                    }
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

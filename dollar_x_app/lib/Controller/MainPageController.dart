@@ -1,4 +1,6 @@
+import 'package:dollar_x_app/Utils/scrapperUtil.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Controlador para gestionar los campos de texto de conversión de moneda.
 ///
@@ -17,11 +19,67 @@ class MainPageController {
   /// [dollarController] - Controlador para el monto en dólares.
   /// [bsController] - Controlador para el monto en bolivares.
   /// Ambos parámetros son requeridos y no pueden ser nulos.
+  /// Tasa de cambio actual (Bs por dólar).
+  double dollar = 0.0;
+
   MainPageController({
     required TextEditingController dollarController,
     required TextEditingController bsController,
   })  : dollarController = dollarController,
         bsController = bsController;
+
+  // ==========================================================================
+  // TASA DE CAMBIO
+  // ==========================================================================
+
+  /// Obtiene la tasa del BCV y la almacena en [dollar].
+  ///
+  /// Retorna el precio formateado con 2 decimales, o `null` si falla.
+  Future<String?> fetchTasa() async {
+    final precio = await ScrapperUtil.getDolarBcv();
+    if (precio != null) dollar = precio;
+    return precio?.toStringAsFixed(2);
+  }
+
+  // ==========================================================================
+  // CLIPBOARD
+  // ==========================================================================
+
+  /// Copia el valor de Bs al portapapeles y muestra un SnackBar.
+  Future<void> copyToClipboardBs(BuildContext context) async {
+    final textToCopy = bsController.text;
+    if (textToCopy.isEmpty) return;
+    await _copyText(context, textToCopy);
+  }
+
+  /// Copia el valor de USD al portapapeles y muestra un SnackBar.
+  Future<void> copyToClipboardUSD(BuildContext context) async {
+    final textToCopy = dollarController.text;
+    if (textToCopy.isEmpty) return;
+    await _copyText(context, textToCopy);
+  }
+
+  Future<void> _copyText(BuildContext context, String text) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Copiado al portapapeles'),
+          backgroundColor: Colors.greenAccent,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al copiar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   // ==========================================================================
   // UTILIDADES DE ACCESO A DATOS
@@ -187,6 +245,60 @@ class MainPageController {
     if (bsText.isEmpty) return null;
     if (bsValue == null) return 'Valor inválido';
     return null;
+  }
+
+  // ==========================================================================
+  // VALIDATORS DE INPUT
+  // ==========================================================================
+
+  /// Valida y normaliza el input del campo USD mientras el usuario escribe.
+  ///
+  /// - Elimina ceros a la izquierda no decimales (ej: "05" → "5")
+  /// - Si el campo queda vacío, lo establece a "0.00"
+  void validatorsUSD(String value) {
+    final hasDecimal = value.contains('.');
+    final startsWithZero = value.isNotEmpty && value[0] == '0';
+    final isDecimalWithLeadingZero = hasDecimal && startsWithZero;
+
+    if ((value.length > 1) &&
+        value[0].contains("0") &&
+        !isDecimalWithLeadingZero) {
+      dollarController.text = dollarController.text.replaceFirst("0", "");
+      value = dollarController.text;
+    }
+    if (value.isEmpty || dollarController.text.isEmpty) {
+      value = "0.00";
+      bsController.text = "0.00";
+      dollarController.text = "0.00";
+      dollarController.selection = TextSelection.fromPosition(
+        TextPosition(offset: dollarController.text.length),
+      );
+    }
+  }
+
+  /// Valida y normaliza el input del campo Bs mientras el usuario escribe.
+  ///
+  /// - Elimina ceros a la izquierda no decimales (ej: "05" → "5")
+  /// - Si el campo queda vacío, lo establece a "0.00"
+  void validatorsBS(String value) {
+    final hasDecimal = value.contains('.');
+    final startsWithZero = value.isNotEmpty && value[0] == '0';
+    final isDecimalWithLeadingZero = hasDecimal && startsWithZero;
+
+    if ((value.length > 1) &&
+        value[0].contains("0") &&
+        !isDecimalWithLeadingZero) {
+      bsController.text = bsController.text.replaceFirst("0", "");
+      value = bsController.text;
+    }
+    if (value.isEmpty || bsController.text.isEmpty) {
+      value = "0.00";
+      dollarController.text = "0.00";
+      bsController.text = "0.00";
+      bsController.selection = TextSelection.fromPosition(
+        TextPosition(offset: bsController.text.length),
+      );
+    }
   }
 
   // ==========================================================================

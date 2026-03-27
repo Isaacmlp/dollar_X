@@ -1,3 +1,4 @@
+import 'package:dollar_x_app/presentation/Constants/colors.dart';
 import 'package:dollar_x_app/presentation/screens/home.dart';
 import 'package:flutter/material.dart';
 
@@ -12,7 +13,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        colorSchemeSeed: Colors.greenAccent,
+        colorSchemeSeed: AppColors.secondary,
         brightness: Brightness.dark,
       ),
       home: const HomeScreen(),
