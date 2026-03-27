@@ -267,9 +267,9 @@ class MainPageController {
       value = dollarController.text;
     }
     if (value.isEmpty || dollarController.text.isEmpty) {
-      value = "0.00";
+      //value = "0.00";
       bsController.text = "0.00";
-      dollarController.text = "0.00";
+      //dollarController.text = "0.00";
       dollarController.selection = TextSelection.fromPosition(
         TextPosition(offset: dollarController.text.length),
       );
@@ -292,9 +292,9 @@ class MainPageController {
       value = bsController.text;
     }
     if (value.isEmpty || bsController.text.isEmpty) {
-      value = "0.00";
+      //value = "0.00";
       dollarController.text = "0.00";
-      bsController.text = "0.00";
+      //bsController.text = "0.00";
       bsController.selection = TextSelection.fromPosition(
         TextPosition(offset: bsController.text.length),
       );

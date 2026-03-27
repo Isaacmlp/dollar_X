@@ -30,7 +30,7 @@ class CurrencyTextField extends StatelessWidget {
         suffixIcon: IconButton(
           onPressed: () => onCopy(context),
           icon: const Icon(Icons.copy),
-        ),
+        ), 
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       controller: textController,
