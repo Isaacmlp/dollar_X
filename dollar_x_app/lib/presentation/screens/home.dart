@@ -4,7 +4,9 @@ import 'package:dollar_x_app/Controller/MainPageController.dart';
 import 'package:dollar_x_app/Widgets/currency_textfield.dart';
 import 'package:dollar_x_app/Widgets/simple_calculator.dart';
 import 'package:dollar_x_app/presentation/Constants/colors.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_simple_calculator/flutter_simple_calculator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +22,13 @@ class _HomeScreenState extends State<HomeScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _tasaFuture = _controller.fetchTasa();
+    });
+    await _tasaFuture;
+  }
 
   @override
   void initState() {
@@ -538,6 +547,70 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       ),
+    );
+  }
+}
+
+class CalcButton extends StatefulWidget {
+  const CalcButton({super.key});
+
+  @override
+  State<CalcButton> createState() => _CalcButtonState();
+}
+
+class _CalcButtonState extends State<CalcButton> {
+  double? _currentValue = 0;
+  @override
+  Widget build(BuildContext context) {
+    var calc = SimpleCalculator(
+      value: _currentValue!,
+      hideExpression: false,
+      hideSurroundingBorder: true,
+      autofocus: true,
+      onChanged: (key, value, expression) {
+        setState(() {
+          _currentValue = value ?? 0;
+        });
+        if (kDebugMode) {
+          print('$key\t$value\t$expression');
+        }
+      },
+      onTappedDisplay: (value, details) {
+        if (kDebugMode) {
+          print('$value\t${details.globalPosition}');
+        }
+      },
+      theme: const CalculatorThemeData(
+        borderColor: Colors.black,
+        borderWidth: 2,
+        displayColor: Colors.black,
+        displayStyle: TextStyle(fontSize: 80, color: AppColors.primary),
+        expressionColor: Colors.indigo,
+        expressionStyle: TextStyle(fontSize: 20, color: Colors.white),
+        operatorColor: Colors.cyan,
+        operatorStyle: TextStyle(fontSize: 30, color: Colors.white),
+        commandColor: AppColors.secondary,
+        commandStyle: TextStyle(fontSize: 30, color: Colors.white),
+        numColor: AppColors.background,
+        numStyle: TextStyle(fontSize: 50, color: Colors.white),
+        equalColor: Colors.blueGrey,
+        equalStyle: TextStyle(fontSize: 50, color: Colors.black),
+      ),
+    );
+    return OutlinedButton(
+      child: Text("Calculadora: ${_currentValue.toString()}"),
+      onPressed: () {
+        showModalBottomSheet(
+          isScrollControlled: true,
+          context: context,
+          builder: (BuildContext context) {
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.75,
+              child: calc,
+            );
+          },
+        );
+      },
     );
   }
 }
